@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="./observer.js"></script>
+    <script src="./watcher.js"></script>
+    <script src="./mvvm.js"></script>
+    <script>
+      const demo = new MVVM({ data: { a: 123, b: 222 } });
+      demo.$watch("a", (val, oldvalue) => {
+        console.log(val, oldvalue);
+      });
+
+      demo.$watch("b", (val, oldvalue) => {
+        console.log(val, oldvalue);
+      });
+
+      //   demo._data.a = 333;
+    </script>
+  </body>
+</html>

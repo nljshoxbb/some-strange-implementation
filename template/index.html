@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>javascript模板引擎</title>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script type="text/html" id="user_tmpl">
+      <% var a = 123; var b = "2312312"; for ( var i = 0; i < users.length; i++
+      ) { %>
+      <li><a href="<%=users[i].url%>"> <%=users[i].name%> <%=a%></a></li>
+      <% } %>
+    </script>
+    <script>
+      // 原理：
+      // 获取片段并转为字符串，通过匹配替换变量和表达式，通过字符串拼接的方式组合起来，
+      // 然后再由 new Function组成可执行的函数，传入值并执行此函数
+      var settings = {
+        // 求值
+        evaluate: /<%([\s\S]+?)%>/g,
+        // 插入
+        interpolate: /<%=([\s\S]+?)%>/g,
+      };
+      var escapes = {
+        "'": "'",
+        "\\": "\\",
+        "\r": "r",
+        "\n": "n",
+        "\u2028": "u2028",
+        "\u2029": "u2029",
+      };
+
+      var escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
+
+      var template = function (text) {
+        var source = "var __t, __p='';\n";
+        source = source + "with(obj){\n";
+        source = source + "__p+='";
+
+        var main = text
+          .replace(escapeRegExp, function (match) {
+            // 字符串表达式中是不允许换行,防止出现换行
+            return "\\" + escapes[match];
+          })
+          .replace(settings.interpolate, function (match, interpolate) {
+            // 插值操作
+            return "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+          })
+          .replace(settings.evaluate, function (match, evaluate) {
+            return "';\n " + evaluate + "\n__p+='";
+          });
+
+        source = source + main + "';\n }; \n return __p;";
+        console.log(source);
+
+        var render = new Function("obj", source);
+        return render;
+      };
+
+      var results = document.getElementById("container");
+
+      var data = {
+        users: [
+          { name: "Byron", url: "http://localhost" },
+          { name: "Casper", url: "http://localhost" },
+          { name: "Frank", url: "http://localhost" },
+        ],
+      };
+
+      var text = document.getElementById("user_tmpl").innerHTML;
+      var compiled = template(text);
+      console.log(compiled);
+      results.innerHTML = compiled(data);
+    </script>
+  </body>
+</html>

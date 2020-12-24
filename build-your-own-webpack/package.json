@@ -1,0 +1,31 @@
+{
+  "name": "easy-webpack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack "
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "less": "^3.12.2",
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.9"
+  },
+  "dependencies": {
+    "@babel/core": "^7.12.10",
+    "@babel/generator": "^7.12.11",
+    "@babel/parser": "^7.12.11",
+    "@babel/traverse": "^7.12.12",
+    "@babel/types": "^7.12.12",
+    "babel-generator": "^6.26.1",
+    "babel-traverse": "^6.26.0",
+    "babel-types": "^6.26.0",
+    "babylon": "^6.18.0",
+    "ejs": "^2.7.1",
+    "jquery": "^3.4.1",
+    "mkdirp": "^0.5.1"
+  }
+}
