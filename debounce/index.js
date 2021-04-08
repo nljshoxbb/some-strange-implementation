@@ -15,14 +15,13 @@ function getUserAction(e) {
   container.innerHTML = count++;
 }
 
-var setUseAction = debounce(getUserAction, 10000, true);
+var setUseAction = debounce(getUserAction, 1000, true);
 
 container.onmousemove = setUseAction;
 
 document.getElementById("button").addEventListener("click", function () {
   setUseAction.cancel();
 });
-
 
 function debounce(func, wait, immediate) {
   var result;

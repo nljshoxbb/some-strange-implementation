@@ -53,7 +53,9 @@ class Observer {
       set: (newVal) => {
         if (val === newVal) return;
         val = newVal;
+        // 对新的值 收集依赖
         observe(newVal);
+        // 通知 更新数据
         dep.notify();
       },
     });

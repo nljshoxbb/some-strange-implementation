@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <body>
+    <canvas id="canvas" class="rainbow-pixel-canvas"></canvas>
+    <p>Drag to draw. Double tap to clear.</p>
+    <script>
+      var pixelSize = 16;
+
+      var canvas = document.getElementById("canvas"),
+        ctx = canvas.getContext("2d");
+
+      canvas.width = 903;
+      canvas.height = 657;
+
+      var background = new Image();
+      background.src = "./oss_3595.jpg";
+
+      // Make sure the image is loaded first otherwise nothing will draw.
+      background.onload = function () {
+        ctx.drawImage(background, 0, 0);
+      };
+
+      interact(".rainbow-pixel-canvas")
+        .draggable({
+          max: Infinity,
+          maxPerElement: Infinity,
+          origin: "self",
+          modifiers: [
+            interact.modifiers.snap({
+              // snap to the corners of a grid
+              targets: [interact.snappers.grid({ x: pixelSize, y: pixelSize })],
+            }),
+          ],
+          listeners: {
+            // draw colored squares on move
+            move: function (event) {
+              var context = event.target.getContext("2d");
+              // calculate the angle of the drag direction
+              var dragAngle = (180 * Math.atan2(event.dx, event.dy)) / Math.PI;
+
+              // set color based on drag angle and speed
+              //   context.fillStyle =
+              //     "hsl(" +
+              //     dragAngle +
+              //     ", 86%, " +
+              //     (30 + Math.min(event.speed / 1000, 1) * 50) +
+              //     "%)";
+              context.fillStyle = "rgba(255,165,0,0.5)";
+
+              // draw squares
+              context.fillRect(
+                event.pageX - pixelSize / 2,
+                event.pageY - pixelSize / 2,
+                pixelSize,
+                pixelSize
+              );
+            },
+          },
+        })
+        // clear the canvas on doubletap
+        .on("doubletap", function (event) {
+          var context = event.target.getContext("2d");
+
+          context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+          resizeCanvases();
+        });
+
+      function resizeCanvases() {
+        [].forEach.call(
+          document.querySelectorAll(".rainbow-pixel-canvas"),
+          function (canvas) {
+            delete canvas.width;
+            delete canvas.height;
+
+            var rect = canvas.getBoundingClientRect();
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+          }
+        );
+      }
+
+      resizeCanvases();
+
+      // interact.js can also add DOM event listeners
+      interact(window).on("resize", resizeCanvases);
+    </script>
+  </body>
+</html>

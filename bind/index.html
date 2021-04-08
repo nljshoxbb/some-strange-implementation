@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      Function.prototype.myBind = function (context, ...args1) {
+        if (this === Function.prototype) {
+          throw new TypeError("Error");
+        }
+        const _this = this;
+        return function F(...args2) {
+          // 判断是否用于构造函数
+          if (this instanceof F) {
+            return new _this(...args1, ...args2);
+          }
+          return _this.apply(context, args1.concat(args2));
+        };
+      };
+
+      const obj = {
+        language: "js",
+      };
+
+      function fn(...args) {
+        console.log("当前" + this.language);
+        console.log(args);
+      }
+      const newFn = fn.bind(obj, 1, 2);
+      newFn(3, 4);
+
+      const a = new newFn(3, 4);
+
+      console.log(a);
+    </script>
+  </body>
+</html>

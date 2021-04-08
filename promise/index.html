@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const PENDING = "pending";
+      const FULFILLED = "fulfilled";
+      const REJECTED = "rejected";
+
+      function MyPromise(executor) {
+        let self = this;
+        self.status = PENDING;
+        self.onFulfilled = []; // 成功回调队列
+        self.onRejected = []; // 失败回调队列
+
+        // PromiseA+ 2.1
+        function resolve(value) {
+          if (self.status === PENDING) {
+            self.status = FULFILLED;
+            self.value = value;
+            self.onFulfilled.forEach((fn) => fn()); //PromiseA+ 2.2.6.1
+          }
+        }
+
+        function reject(reason) {
+          if (self.status === PENDING) {
+            self.status = REJECTED;
+            self.reason = reason;
+            self.onRejected.forEach((fn) => fn()); //PromiseA+ 2.2.6.2
+          }
+        }
+
+        try {
+          executor(resolve, reject);
+        } catch (error) {
+          console.log(error);
+          reject(error);
+        }
+      }
+
+      function resolvePromise(promise2, x, resolve, reject) {
+        let self = this;
+
+        //有可能这里返回的x是别人的promise 要尽可能允许其他人乱写
+        if (promise2 === x) {
+          reject(new TypeError("Chaining cycle"));
+        }
+        // 后续的条件要严格判断 保证代码能和别的库一起使用
+        if ((x && typeof x === "object") || typeof x === "function") {
+          let used; // 只能调用一次
+
+          //可能是promise 看这个对象中是否有then 如果有 姑且作为promise 用try catch防止报错
+          try {
+            // 为了判断 resolve 过的就不用再 reject 了（比如 reject 和 resolve 同时调用的时候）
+            let then = x.then;
+            if (typeof then === "function") {
+              // 不要写成 x.then，直接 then.call 就可以了 因为 x.then 会再次取值，Object.defineProperty
+              then.call(
+                x,
+                (y) => {
+                  if (used) return;
+                  used = true;
+                  // 递归解析的过程（因为可能 promise 中还有 promise）
+                  resolvePromise(promise2, y, resolve, reject);
+                },
+                (r) => {
+                  if (used) return;
+                  used = true;
+                  reject(r);
+                }
+              );
+            } else {
+              if (used) return;
+              used = true;
+              resolve(x); //如果then不是函数 则把x作为返回值.
+            }
+          } catch (error) {
+            //PromiseA+ 2.3.3.2
+            if (used) return;
+            used = true;
+            reject(error);
+          }
+        } else {
+          //普通值
+          resolve(x);
+        }
+      }
+
+      MyPromise.prototype.then = function (onFulfilled, onRejected) {
+        // 当then中使用没有任何方法, onFulfiled()中的data自动作为返回值(解决值穿透问题)
+        onFulfilled =
+          typeof onFulfilled === "function" ? onFulfilled : (value) => value;
+        // 在值穿透的情况下 应该走下一个then的onRejected而不是onFulfiled 保证逻辑的一致性
+        onRejected =
+          typeof onRejected === "function"
+            ? onRejected
+            : (reason) => {
+                throw reason;
+              };
+
+        let self = this;
+
+        let promise2 = new MyPromise((resolve, reject) => {
+          if (self.status === FULFILLED) {
+            // 这里的setTimeout为了解决的是onFulfild/onRejected异步执行的问题
+            // 用setTimeOut实现异步
+            setTimeout(() => {
+              try {
+                let x = onFulfilled(self.value); //x可能是普通值 也可能是一个promise, 还可能是别人的promise
+                resolvePromise(promise2, x, resolve, reject); //写一个方法统一处理
+              } catch (error) {
+                reject(error);
+              }
+            });
+          } else if (self.status === REJECTED) {
+            setTimeout(() => {
+              try {
+                let x = onRejected(self.reason);
+                resolvePromise(promise2, x, resolve, reject);
+              } catch (error) {
+                reject(error);
+              }
+            });
+          } else if (self.status === PENDING) {
+            // 此条件解决 如果 executor 有异步代码的情况
+            // 此时为构造函数new Promise()执行期间
+            // 把then中的执行函数onFulfiled, onRejected先存入队列(用array实现),当状态改变后执行这些方法.
+            self.onFulfilled.push(() => {
+              setTimeout(() => {
+                try {
+                  let x = onFulfilled(self.value);
+                  resolvePromise(promise2, x, resolve, reject);
+                } catch (error) {
+                  reject(error);
+                }
+              });
+            });
+
+            self.onRejected.push(() => {
+              setTimeout(() => {
+                try {
+                  let x = onRejected(self.reason);
+                  resolvePromise(promise2, x, resolve, reject);
+                } catch (error) {
+                  reject(error);
+                }
+              });
+            });
+          }
+        });
+
+        return promise2;
+      };
+
+      const pr = new MyPromise(
+        (resolve) => {
+          throw Error("123");
+          setTimeout(() => {
+            resolve(1111);
+          }, 1000);
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+
+      pr.then((value) => {
+        return value;
+      }).then((value) => {
+        console.log(`${value}-11`);
+      });
+    </script>
+  </body>
+</html>
